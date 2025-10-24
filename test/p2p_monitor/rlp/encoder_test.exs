@@ -241,6 +241,53 @@ defmodule P2PMonitor.RLP.EncoderTest do
       assert <<0x01, _rest::binary>> = encoded
     end
 
+    test "encodes EIP-4844 blob transaction" do
+      tx = %{
+        type: :eip4844,
+        chain_id: 1,
+        nonce: 0,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 21_000,
+        to: <<0x12, 0x34>>,
+        value: 1_000_000_000_000_000_000,
+        data: <<>>,
+        access_list: [],
+        max_fee_per_blob_gas: 1_000_000_000,
+        blob_versioned_hashes: [<<1::256>>]
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      # EIP-4844 should start with 0x03
+      assert <<0x03, _rest::binary>> = encoded
+    end
+
+    test "encodes EIP-4844 transaction with signature" do
+      tx = %{
+        type: :eip4844,
+        chain_id: 1,
+        nonce: 5,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 50_000,
+        to: <<0xAB, 0xCD>>,
+        value: 5_000_000_000_000_000_000,
+        data: <<0x12, 0x34>>,
+        access_list: [],
+        max_fee_per_blob_gas: 2_000_000_000,
+        blob_versioned_hashes: [<<1::256>>, <<2::256>>],
+        v: 0,
+        r: 12345,
+        s: 67890
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      # EIP-4844 should start with 0x03
+      assert <<0x03, _rest::binary>> = encoded
+    end
+
     test "encodes transaction with contract creation (empty to)" do
       tx = %{
         type: :legacy,
@@ -324,6 +371,13 @@ defmodule P2PMonitor.RLP.EncoderTest do
       encoded = Encoder.encode_transaction(tx)
       
       assert <<0x01, _rest::binary>> = encoded
+    end
+
+    test "encodes EIP-4844 transaction from factory" do
+      tx = build_eip4844_transaction()
+      encoded = Encoder.encode_transaction(tx)
+      
+      assert <<0x03, _rest::binary>> = encoded
     end
   end
 

@@ -31,9 +31,10 @@ This tool is designed for network research, MEV analysis, security monitoring, a
 ### Implemented (Phase 1)
 
 - **RLP Encoding/Decoding**: Full support for Ethereum's RLP serialization format
-  - Legacy transactions
-  - EIP-1559 transactions (Type 2)
-  - EIP-2930 transactions (Type 1)
+  - Legacy transactions (Type 0)
+  - EIP-2930 transactions with access lists (Type 1)
+  - EIP-1559 transactions with dynamic fees (Type 2)
+  - EIP-4844 blob transactions (Type 3)
   
 - **Cryptography**:
   - Keccak-256 hashing
@@ -332,19 +333,20 @@ chain_id = Network.chain_id(:mainnet)
 
 ## Test Coverage
 
-Current test coverage: **90.9%**
+Current test coverage: **92.0%**
 
 - Main module: 100%
 - Keccak module: 100%
 - Network config: 100%
-- RLP encoder: 96.0%
-- RLP decoder: 85.7%
-- Signature module: 81.2%
+- RLP encoder: 97.0%
+- RLP decoder: 86.0%
+- Signature module: 82.9%
 
 **Test Statistics:**
-- 236 total tests (31 doctests + 21 properties + 184 unit tests)
+- 241 total tests (31 doctests + 21 properties + 189 unit tests)
 - Property-based tests with StreamData
 - Known test vectors for Ethereum compatibility
+- Full support for all transaction types (Legacy, EIP-2930, EIP-1559, EIP-4844)
 
 ## Contributing
 
@@ -381,8 +383,10 @@ See [SPECIFICATION.md](SPECIFICATION.md) for the complete implementation roadmap
 - [Ethereum DevP2P Specification](https://github.com/ethereum/devp2p)
 - [ETH Wire Protocol](https://github.com/ethereum/devp2p/blob/master/caps/eth.md)
 - [RLPx Transport Protocol](https://github.com/ethereum/devp2p/blob/master/rlpx.md)
-- [EIP-1559: Fee Market](https://eips.ethereum.org/EIPS/eip-1559)
 - [EIP-155: Simple Replay Attack Protection](https://eips.ethereum.org/EIPS/eip-155)
+- [EIP-1559: Fee Market](https://eips.ethereum.org/EIPS/eip-1559)
+- [EIP-2930: Access List Transaction Type](https://eips.ethereum.org/EIPS/eip-2930)
+- [EIP-4844: Shard Blob Transactions](https://eips.ethereum.org/EIPS/eip-4844)
 - [EIP-55: Mixed-case Checksum Address Encoding](https://eips.ethereum.org/EIPS/eip-55)
 
 ## Acknowledgments

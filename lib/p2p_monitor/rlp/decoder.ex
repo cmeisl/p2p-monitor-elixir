@@ -77,6 +77,16 @@ defmodule P2PMonitor.RLP.Decoder do
     * `{:error, reason}` - Decoding failed
   """
   @spec decode_transaction(binary()) :: {:ok, map()} | {:error, atom()}
+  def decode_transaction(<<0x03, rest::binary>>) do
+    # EIP-4844 transaction
+    with {:ok, fields} <- decode(rest),
+         true <- is_list(fields) do
+      {:ok, parse_eip4844_transaction(fields)}
+    else
+      _ -> {:error, :invalid_transaction}
+    end
+  end
+
   def decode_transaction(<<0x02, rest::binary>>) do
     # EIP-1559 transaction
     with {:ok, fields} <- decode(rest),
@@ -197,6 +207,39 @@ defmodule P2PMonitor.RLP.Decoder do
   end
 
   defp parse_eip2930_transaction(_), do: %{type: :eip2930}
+
+  defp parse_eip4844_transaction(fields) when length(fields) >= 11 do
+    [chain_id, nonce, max_priority_fee, max_fee, gas_limit, to, value, data, access_list, max_fee_per_blob_gas, blob_versioned_hashes | rest] = fields
+
+    base = %{
+      type: :eip4844,
+      chain_id: parse_integer(chain_id),
+      nonce: parse_integer(nonce),
+      max_priority_fee_per_gas: parse_integer(max_priority_fee),
+      max_fee_per_gas: parse_integer(max_fee),
+      gas_limit: parse_integer(gas_limit),
+      to: to,
+      value: parse_integer(value),
+      data: data,
+      access_list: access_list,
+      max_fee_per_blob_gas: parse_integer(max_fee_per_blob_gas),
+      blob_versioned_hashes: blob_versioned_hashes
+    }
+
+    # Add signature if present
+    case rest do
+      [v, r, s] ->
+        Map.merge(base, %{
+          v: parse_integer(v),
+          r: parse_integer(r),
+          s: parse_integer(s)
+        })
+      _ ->
+        base
+    end
+  end
+
+  defp parse_eip4844_transaction(_), do: %{type: :eip4844}
 
   defp parse_integer(data) when data == "" or data == <<>>, do: 0
   defp parse_integer(data) when is_binary(data) do

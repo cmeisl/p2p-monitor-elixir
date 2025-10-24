@@ -76,6 +76,28 @@ defmodule P2PMonitor.Factory do
   end
 
   @doc """
+  Creates an EIP-4844 blob transaction for testing.
+  """
+  @spec build_eip4844_transaction(keyword()) :: map()
+  def build_eip4844_transaction(attrs \\ []) do
+    base = build_transaction(attrs)
+    
+    eip4844_fields = %{
+      type: :eip4844,
+      chain_id: Keyword.get(attrs, :chain_id, 1),
+      max_fee_per_gas: Keyword.get(attrs, :max_fee_per_gas, 30_000_000_000),
+      max_priority_fee_per_gas: Keyword.get(attrs, :max_priority_fee_per_gas, 2_000_000_000),
+      access_list: Keyword.get(attrs, :access_list, []),
+      max_fee_per_blob_gas: Keyword.get(attrs, :max_fee_per_blob_gas, 1_000_000_000),
+      blob_versioned_hashes: Keyword.get(attrs, :blob_versioned_hashes, [random_hash()])
+    }
+    
+    base
+    |> Map.delete(:gas_price)
+    |> Map.merge(eip4844_fields)
+  end
+
+  @doc """
   Creates a peer structure for testing.
   """
   @spec build_peer(keyword()) :: map()

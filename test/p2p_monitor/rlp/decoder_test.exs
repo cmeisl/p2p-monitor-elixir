@@ -218,6 +218,60 @@ defmodule P2PMonitor.RLP.DecoderTest do
       assert decoded.gas_price == 20_000_000_000
     end
 
+    test "decodes EIP-4844 blob transaction" do
+      tx = %{
+        type: :eip4844,
+        chain_id: 1,
+        nonce: 0,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 21_000,
+        to: <<0x12, 0x34>>,
+        value: 1_000_000_000_000_000_000,
+        data: <<>>,
+        access_list: [],
+        max_fee_per_blob_gas: 1_000_000_000,
+        blob_versioned_hashes: [<<1::256>>]
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      assert {:ok, decoded} = Decoder.decode_transaction(encoded)
+      assert decoded.type == :eip4844
+      assert decoded.chain_id == 1
+      assert decoded.max_fee_per_blob_gas == 1_000_000_000
+      assert decoded.blob_versioned_hashes == [<<1::256>>]
+    end
+
+    test "decodes EIP-4844 transaction with signature" do
+      tx = %{
+        type: :eip4844,
+        chain_id: 1,
+        nonce: 5,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 50_000,
+        to: <<0xAB, 0xCD>>,
+        value: 5_000_000_000_000_000_000,
+        data: <<0x12, 0x34>>,
+        access_list: [],
+        max_fee_per_blob_gas: 2_000_000_000,
+        blob_versioned_hashes: [<<1::256>>, <<2::256>>],
+        v: 0,
+        r: 12345,
+        s: 67890
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      assert {:ok, decoded} = Decoder.decode_transaction(encoded)
+      assert decoded.type == :eip4844
+      assert decoded.v == 0
+      assert decoded.r == 12345
+      assert decoded.s == 67890
+      assert length(decoded.blob_versioned_hashes) == 2
+    end
+
     test "detects transaction type from first byte" do
       # Legacy (no prefix)
       legacy_tx = build_minimal_transaction()
@@ -236,6 +290,12 @@ defmodule P2PMonitor.RLP.DecoderTest do
       eip2930_encoded = Encoder.encode_transaction(eip2930_tx)
       assert {:ok, decoded} = Decoder.decode_transaction(eip2930_encoded)
       assert decoded.type == :eip2930
+      
+      # EIP-4844 (0x03 prefix)
+      eip4844_tx = build_eip4844_transaction()
+      eip4844_encoded = Encoder.encode_transaction(eip4844_tx)
+      assert {:ok, decoded} = Decoder.decode_transaction(eip4844_encoded)
+      assert decoded.type == :eip4844
     end
 
     test "decodes transaction with empty to (contract creation)" do
