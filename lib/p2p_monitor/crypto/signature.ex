@@ -122,9 +122,6 @@ defmodule P2PMonitor.Crypto.Signature do
 
       {:error, reason} ->
         {:error, reason}
-
-      _ ->
-        {:error, :signing_failed}
     end
   rescue
     _ -> {:error, :invalid_input}
