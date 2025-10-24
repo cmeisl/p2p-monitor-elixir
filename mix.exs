@@ -52,6 +52,7 @@ defmodule P2PMonitor.MixProject do
       {:mox, "~> 1.1", only: :test},
       {:faker, "~> 0.18", only: :test},
       {:excoveralls, "~> 0.18", only: :test},
+      {:jason, "~> 1.4", only: [:dev, :test]},
 
       # Development and Analysis
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

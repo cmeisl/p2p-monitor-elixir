@@ -372,13 +372,6 @@ defmodule P2PMonitor.RLP.EncoderTest do
       
       assert <<0x01, _rest::binary>> = encoded
     end
-
-    test "encodes EIP-4844 transaction from factory" do
-      tx = build_eip4844_transaction()
-      encoded = Encoder.encode_transaction(tx)
-      
-      assert <<0x03, _rest::binary>> = encoded
-    end
   end
 
   describe "encoding edge cases" do

@@ -149,6 +149,34 @@ mix test --failed
 mix test --only property
 ```
 
+### Integration Tests with Real Ethereum Data
+
+Integration tests fetch real transaction data from Ethereum networks. They are excluded by default.
+
+```bash
+# Run only integration tests
+mix test --only integration
+
+# Run all tests including integration tests
+mix test --include integration
+
+# Run integration tests with a specific network
+ETHEREUM_RPC_URL="https://eth.llamarpc.com" mix test --only integration
+```
+
+**Quick test with real data:**
+
+```bash
+# Run the example script
+mix run scripts/test_with_real_data.exs
+```
+
+See [test/integration/INTEGRATION_TESTING.md](test/integration/INTEGRATION_TESTING.md) for detailed instructions on:
+- Fetching real transactions from mainnet/testnets
+- Testing with different transaction types
+- Using public or private RPC endpoints
+- Interactive testing with IEx
+
 ## Development
 
 ### Code Quality Checks
