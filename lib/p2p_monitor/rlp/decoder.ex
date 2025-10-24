@@ -300,7 +300,10 @@ defmodule P2PMonitor.RLP.Decoder do
   end
   defp parse_authorization_list(_), do: []
 
-  defp parse_nonce_list(data) when is_list(data), do: data
+  defp parse_nonce_list(data) when is_list(data) do
+    # Normalize list elements to integers for consistent representation
+    Enum.map(data, &parse_integer/1)
+  end
   defp parse_nonce_list(data) when is_binary(data) and byte_size(data) == 0, do: []
   defp parse_nonce_list(data), do: [parse_integer(data)]
 

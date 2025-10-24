@@ -37,13 +37,66 @@ defmodule P2PMonitor.Test.EthereumClient do
   @doc """
   Fetches raw transaction bytes by transaction hash.
   
-  Returns the RLP-encoded transaction data.
+  Returns the RLP-encoded transaction data along with metadata about the source.
   
-  Note: Uses eth_getBlockByNumber + transaction index since eth_getRawTransactionByHash
-  is not widely supported by public RPC endpoints.
+  Attempts to fetch actual raw RLP from Etherscan first. If that fails,
+  falls back to reconstructing the transaction from JSON RPC data using
+  eth_getBlockByNumber + transaction index.
+  
+  Returns `{:ok, raw_tx, source}` where source is either `:etherscan` or `:json_reconstruction`.
   """
-  @spec get_raw_transaction(tx_hash(), network()) :: {:ok, binary()} | {:error, term()}
+  @spec get_raw_transaction(tx_hash(), network()) :: {:ok, binary(), atom()} | {:error, term()}
   def get_raw_transaction(tx_hash, network \\ :mainnet) do
+    # Try to get actual raw RLP from Etherscan first
+    case get_raw_transaction_from_etherscan(tx_hash, network) do
+      {:ok, raw_tx} -> 
+        {:ok, raw_tx, :etherscan}
+      
+      {:error, _reason} ->
+        # Fallback to reconstructing from JSON
+        case get_raw_transaction_from_json(tx_hash, network) do
+          {:ok, raw_tx} -> {:ok, raw_tx, :json_reconstruction}
+          {:error, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  defp get_raw_transaction_from_etherscan(tx_hash, network) do
+    base_url = case network do
+      :mainnet -> "https://etherscan.io"
+      :sepolia -> "https://sepolia.etherscan.io"
+      :holesky -> "https://holesky.etherscan.io"
+    end
+    
+    url = "#{base_url}/getRawTx?tx=#{tx_hash}"
+    
+    case http_get(url) do
+      {:ok, html} when is_binary(html) ->
+        # Etherscan returns an HTML page with the raw transaction hex
+        # Format: "Returned Raw Transaction Hex : <br><br>0x..."
+        case extract_raw_tx_from_html(html) do
+          nil -> {:error, :raw_tx_not_found_in_response}
+          raw_hex -> 
+            case hex_to_binary(raw_hex) do
+              <<>> -> {:error, :invalid_hex_data}
+              binary -> {:ok, binary}
+            end
+        end
+      
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp extract_raw_tx_from_html(html) do
+    # Look for pattern: "Returned Raw Transaction Hex : <br><br>0x..."
+    case Regex.run(~r/Returned Raw Transaction Hex.*?<br><br>(0x[0-9a-fA-F]+)/s, html) do
+      [_, raw_hex] -> raw_hex
+      _ -> nil
+    end
+  end
+
+  defp get_raw_transaction_from_json(tx_hash, network) do
     # First, get the transaction to find its block
     with {:ok, tx} <- get_transaction(tx_hash, network),
          block_number when is_binary(block_number) <- tx["blockNumber"],
@@ -352,6 +405,21 @@ defmodule P2PMonitor.Test.EthereumClient do
     System.get_env("HOLESKY_RPC_URL") || "https://ethereum-holesky.publicnode.com"
   end
   
+  defp http_get(url) do
+    case :httpc.request(:get, {String.to_charlist(url), []}, [], []) do
+      {:ok, {{_, 200, _}, _headers, response_body}} ->
+        {:ok, to_string(response_body)}
+        
+      {:ok, {{_, status, _}, _headers, response_body}} ->
+        {:error, {:http_error, status, to_string(response_body)}}
+        
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    e -> {:error, {:exception, e}}
+  end
+
   defp http_post(url, payload) do
     headers = [{~c"content-type", ~c"application/json"}]
     body = Jason.encode!(payload)

@@ -35,6 +35,76 @@ export ETHEREUM_RPC_URL="https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
 export SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/YOUR_PROJECT_ID"
 ```
 
+## Understanding Test Output
+
+### RLP Source Logging
+
+Integration tests display information about where the RLP transaction data came from:
+
+```
+Running ExUnit with seed: 630850, max_cases: 24
+Including tags: [:integration]
+
+  ℹ RLP source: etherscan
+.  ℹ RLP source: etherscan
+.  ℹ RLP source: etherscan
+.
+Finished in 1.4 seconds (0.00s async, 1.4s sync)
+6 tests, 0 failures
+```
+
+The `ℹ RLP source:` indicator shows how transaction data was obtained:
+
+- **`etherscan`**: Actual raw RLP-encoded transaction data fetched directly from Etherscan
+  - This is the **preferred** source as it validates the decoder against real network data
+  - Tests the actual bytes that were broadcast to the Ethereum network
+  - Provides the highest confidence that encoding/decoding matches the official spec
+
+- **`json_reconstruction`**: Transaction reconstructed from JSON-RPC response fields
+  - Used as a fallback when Etherscan is unavailable (rate limiting, network issues)
+  - Reconstructs the RLP encoding from individual transaction fields (nonce, gas, etc.)
+  - Still validates round-trip encoding but doesn't test against actual network data
+  - Less ideal but ensures tests can run without Etherscan dependency
+
+### What These Sources Mean
+
+**Etherscan (Actual RLP)**:
+When tests show `etherscan`, the integration tests are validating your decoder against the exact bytes that were:
+1. Signed by the transaction sender
+2. Broadcast to the Ethereum network
+3. Included in a mined block
+4. Stored on the blockchain
+
+This is the gold standard for validation - if your decoder can handle real mainnet transactions, it's production-ready.
+
+**JSON Reconstruction (Fallback)**:
+When tests show `json_reconstruction`, the test:
+1. Fetches transaction details via JSON-RPC (eth_getTransactionByHash)
+2. Uses your encoder to reconstruct the RLP from those fields
+3. Tests your decoder against your encoder's output
+
+This validates that encoding and decoding are consistent with each other, but doesn't guarantee they match the actual network format. It's useful for:
+- Development when Etherscan is unavailable
+- Testing in CI environments with limited external dependencies
+- Verifying round-trip encoding consistency
+
+### Interpreting Results
+
+✅ **Best Case**: All tests show `etherscan`
+- Your decoder works with real mainnet data
+- Maximum confidence in production readiness
+
+⚠️ **Acceptable**: Mix of `etherscan` and `json_reconstruction`
+- Some tests validated against real data
+- May indicate rate limiting or network issues
+- Tests still pass but with reduced confidence
+
+❌ **Concerning**: All tests show `json_reconstruction`
+- No validation against real network data
+- Suggests Etherscan is blocked or unavailable
+- Check network connectivity or rate limits
+- Consider using a different network or waiting before retrying
+
 ## Using the EthereumClient Helper
 
 ### Fetch a Transaction
@@ -45,7 +115,8 @@ alias P2PMonitor.RLP.Decoder
 
 # Fetch raw transaction data
 tx_hash = "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
-{:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+{:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+IO.puts("RLP source: #{source}")
 
 # Decode it
 {:ok, decoded} = Decoder.decode_transaction(raw_tx)
@@ -77,7 +148,8 @@ Here are some real transaction hashes you can use for testing:
 ```elixir
 # Early Ethereum transaction
 tx_hash = "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
-{:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash)
+{:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash)
+IO.puts("RLP source: #{source}")
 {:ok, decoded} = Decoder.decode_transaction(raw_tx)
 assert decoded.type == :legacy
 ```
@@ -121,7 +193,8 @@ tx_hash = "0x..." # Use a real transaction hash
 IO.inspect(tx_data, label: "Transaction")
 
 # Get raw transaction and decode
-{:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash)
+{:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash)
+IO.puts("RLP source: #{source}")
 {:ok, decoded} = Decoder.decode_transaction(raw_tx)
 IO.inspect(decoded, label: "Decoded")
 
@@ -233,7 +306,8 @@ defmodule P2PMonitor.Integration.RealDataTest do
     tx_hash = "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060"
     
     # Fetch raw transaction
-    assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+    assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+    IO.puts("RLP source: #{source}")
     
     # Decode it
     assert {:ok, decoded} = Decoder.decode_transaction(raw_tx)

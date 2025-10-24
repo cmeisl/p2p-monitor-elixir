@@ -40,7 +40,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0x78215a54ee1713c1232247b55dccb86c7e64fdba7d5875668a8237e4c28efb0c"
       
       # Fetch raw transaction data
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       assert is_binary(raw_tx)
       assert byte_size(raw_tx) > 0
       
@@ -82,7 +83,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0x04d6b9ff55c9e7d373332bc595b83ce4be7fbe76eb1cd6ef8c8d0056de2f2117"
       
       # Fetch raw transaction data
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       assert is_binary(raw_tx)
       assert byte_size(raw_tx) > 0
       
@@ -129,7 +131,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0x16590f666db4774546818fe71c2b6566042088eba5ac0979de184e5ee8999f4b"
       
       # Fetch raw transaction data
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       assert is_binary(raw_tx)
       assert byte_size(raw_tx) > 0
       
@@ -176,7 +179,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0xf71e343019f2371cdbe58fceff6beb6ce7c69b4be17ebc0be61ac68c2ff2f85a"
       
       # Fetch raw transaction data
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       assert is_binary(raw_tx)
       assert byte_size(raw_tx) > 0
       
@@ -228,7 +232,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0x0ad658fb90233553a9100b58a0e3f73b80dac504e2246f8ba5c569de499eb9ec"
       
       # Fetch raw transaction data
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       assert is_binary(raw_tx)
       assert byte_size(raw_tx) > 0
       
@@ -293,7 +298,8 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
       tx_hash = "0x04d6b9ff55c9e7d373332bc595b83ce4be7fbe76eb1cd6ef8c8d0056de2f2117"
       
       # Fetch raw transaction from network
-      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert {:ok, raw_tx, source} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      IO.puts("  ℹ RLP source: #{source}")
       
       # First decode
       assert {:ok, decoded1} = Decoder.decode_transaction(raw_tx)
