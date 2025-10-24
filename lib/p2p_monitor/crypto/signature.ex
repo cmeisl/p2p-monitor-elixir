@@ -42,11 +42,8 @@ defmodule P2PMonitor.Crypto.Signature do
     r_bin = int_to_binary(r, 32)
     s_bin = int_to_binary(s, 32)
 
-    # Concatenate r and s to create compact signature
-    compact_sig = r_bin <> s_bin
-
-    # Recover public key
-    case ExSecp256k1.recover_compact(message_hash, compact_sig, :uncompressed, recovery_id) do
+    # Recover public key using the 4-argument recover function
+    case ExSecp256k1.recover(message_hash, r_bin, s_bin, recovery_id) do
       {:ok, <<0x04, public_key::binary-size(64)>>} ->
         {:ok, public_key}
 
@@ -113,10 +110,8 @@ defmodule P2PMonitor.Crypto.Signature do
   @spec sign(binary(), binary(), keyword()) :: {:ok, signature()} | {:error, atom()}
   def sign(message_hash, private_key, opts \\ [])
       when byte_size(message_hash) == 32 and byte_size(private_key) == 32 do
-    case ExSecp256k1.sign_compact(message_hash, private_key) do
-      {:ok, signature, recovery_id} ->
-        <<r_bin::binary-size(32), s_bin::binary-size(32)>> = signature
-
+    case ExSecp256k1.sign(message_hash, private_key) do
+      {:ok, {r_bin, s_bin, recovery_id}} ->
         r = :binary.decode_unsigned(r_bin, :big)
         s = :binary.decode_unsigned(s_bin, :big)
 
@@ -168,7 +163,7 @@ defmodule P2PMonitor.Crypto.Signature do
     * Normalized signature map
   """
   @spec normalize_signature(signature()) :: signature()
-  def normalize_signature(%{v: v, r: r, s: s} = sig) do
+  def normalize_signature(%{v: v, r: _r, s: s} = sig) do
     n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
     half_n = div(n, 2)
 

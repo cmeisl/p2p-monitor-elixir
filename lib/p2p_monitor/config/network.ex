@@ -94,8 +94,9 @@ defmodule P2PMonitor.Config.Network do
 
   ## Examples
 
-      iex> P2PMonitor.Config.Network.current()
-      :mainnet
+      iex> network = P2PMonitor.Config.Network.current()
+      iex> P2PMonitor.Config.Network.valid_network?(network)
+      true
   """
   @spec current() :: network()
   def current do

@@ -198,8 +198,7 @@ defmodule P2PMonitor.RLP.Decoder do
 
   defp parse_eip2930_transaction(_), do: %{type: :eip2930}
 
-  defp parse_integer(""), do: 0
-  defp parse_integer(<<>>), do: 0
+  defp parse_integer(data) when data == "" or data == <<>>, do: 0
   defp parse_integer(data) when is_binary(data) do
     :binary.decode_unsigned(data, :big)
   end

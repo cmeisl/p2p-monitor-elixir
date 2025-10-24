@@ -5,20 +5,27 @@ defmodule P2PMonitor.MixProject do
     [
       app: :p2p_monitor,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
+      test_pattern: "*_test.exs",
+      test_ignore_filters: [~r/test\/support\//],
+      dialyzer: [
+        plt_add_apps: [:mix, :ex_unit],
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+      ]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
         "coveralls.github": :test
-      ],
-      dialyzer: [
-        plt_add_apps: [:mix, :ex_unit],
-        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
       ]
     ]
   end

@@ -12,7 +12,7 @@ defmodule P2PMonitor.Crypto.Keccak do
 
       iex> P2PMonitor.Crypto.Keccak.hash("hello")
       <<28, 138, 255, 149, 6, 133, 194, 237, 75, 195, 23, 79, 52, 114, 40, 123,
-        58, 210, 122, 23, 101, 85, 92, 206, 114, 28, 167, 197, 203, 229, 83, 182>>
+        86, 217, 81, 123, 156, 148, 129, 39, 49, 154, 9, 167, 163, 109, 234, 200>>
   """
 
   @doc """
@@ -51,10 +51,10 @@ defmodule P2PMonitor.Crypto.Keccak do
   ## Examples
 
       iex> P2PMonitor.Crypto.Keccak.hash_hex("hello")
-      "1c8aff950685c2ed4bc3174f347228073ad27a1765555cce721ca7c5cbe553b6"
+      "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8"
 
       iex> P2PMonitor.Crypto.Keccak.hash_hex("hello", prefix: true)
-      "0x1c8aff950685c2ed4bc3174f347228073ad27a1765555cce721ca7c5cbe553b6"
+      "0x1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8"
   """
   @spec hash_hex(binary(), keyword()) :: String.t()
   def hash_hex(data, opts \\ []) when is_binary(data) do
@@ -116,9 +116,9 @@ defmodule P2PMonitor.Crypto.Keccak do
       iex> addr = P2PMonitor.Crypto.Keccak.public_key_to_address_hex(public_key)
       iex> String.length(addr)
       40
-
-      iex> addr = P2PMonitor.Crypto.Keccak.public_key_to_address_hex(public_key, prefix: true)
-      iex> String.starts_with?(addr, "0x")
+      iex> public_key = <<1::512>>
+      iex> addr_with_prefix = P2PMonitor.Crypto.Keccak.public_key_to_address_hex(public_key, prefix: true)
+      iex> String.starts_with?(addr_with_prefix, "0x")
       true
   """
   @spec public_key_to_address_hex(binary(), keyword()) :: String.t()
