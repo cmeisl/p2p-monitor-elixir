@@ -95,6 +95,7 @@ defmodule P2PMonitor.Test.EthereumClient do
       "0x1" -> :eip2930
       "0x2" -> :eip1559
       "0x3" -> :eip4844
+      "0x4" -> :eip7702
       _ -> :legacy
     end
     
@@ -137,6 +138,21 @@ defmodule P2PMonitor.Test.EthereumClient do
         |> Map.put(:access_list, parse_access_list(tx["accessList"] || []))
         |> Map.put(:max_fee_per_blob_gas, hex_to_integer(tx["maxFeePerBlobGas"] || "0x0"))
         |> Map.put(:blob_versioned_hashes, parse_blob_hashes(tx["blobVersionedHashes"] || []))
+        
+      :eip7702 ->
+        # EIP-7702 uses signature_y_parity instead of v
+        tx_map
+        |> Map.delete(:v)
+        |> Map.put(:chain_id, hex_to_integer(tx["chainId"] || "0x1"))
+        |> Map.put(:max_priority_fee_per_gas, hex_to_integer(tx["maxPriorityFeePerGas"]))
+        |> Map.put(:max_fee_per_gas, hex_to_integer(tx["maxFeePerGas"]))
+        |> Map.put(:access_list, parse_access_list(tx["accessList"] || []))
+        |> Map.put(:authorization_list, parse_authorization_list_json(tx["authorizationList"] || []))
+        |> Map.put(:signature_y_parity, calculate_y_parity_from_json(tx))
+        |> Map.put(:signature_r, hex_to_integer(tx["r"]))
+        |> Map.put(:signature_s, hex_to_integer(tx["s"]))
+        |> Map.delete(:r)
+        |> Map.delete(:s)
     end
     
     # Encode using our RLP encoder
@@ -155,10 +171,11 @@ defmodule P2PMonitor.Test.EthereumClient do
   
   defp parse_access_list(list) when is_list(list) do
     Enum.map(list, fn item ->
-      %{
-        address: hex_to_binary(item["address"]),
-        storage_keys: Enum.map(item["storageKeys"] || [], &hex_to_binary/1)
-      }
+      # RLP expects access list as [address, [storage_keys]]
+      [
+        hex_to_binary(item["address"]),
+        Enum.map(item["storageKeys"] || [], &hex_to_binary/1)
+      ]
     end)
   end
   defp parse_access_list(_), do: []
@@ -167,6 +184,37 @@ defmodule P2PMonitor.Test.EthereumClient do
     Enum.map(list, &hex_to_binary/1)
   end
   defp parse_blob_hashes(_), do: []
+  
+  defp parse_authorization_list_json(list) when is_list(list) do
+    Enum.map(list, fn auth ->
+      %{
+        chain_id: hex_to_integer(auth["chainId"] || "0x0"),
+        address: hex_to_binary(auth["address"] || "0x"),
+        nonce: parse_nonce_from_json(auth["nonce"]),
+        y_parity: hex_to_integer(auth["yParity"] || "0x0"),
+        r: hex_to_integer(auth["r"] || "0x0"),
+        s: hex_to_integer(auth["s"] || "0x0")
+      }
+    end)
+  end
+  defp parse_authorization_list_json(_), do: []
+  
+  defp parse_nonce_from_json(nil), do: []
+  defp parse_nonce_from_json([]), do: []
+  defp parse_nonce_from_json(nonce) when is_list(nonce) do
+    Enum.map(nonce, &hex_to_integer/1)
+  end
+  defp parse_nonce_from_json(nonce) when is_binary(nonce) do
+    [hex_to_integer(nonce)]
+  end
+  defp parse_nonce_from_json(_), do: []
+  
+  defp calculate_y_parity_from_json(tx) do
+    # For EIP-7702, y_parity is extracted from v
+    # If v is available, calculate y_parity from it
+    v = hex_to_integer(tx["v"] || "0x0")
+    rem(v, 2)
+  end
   
   @doc """
   Fetches transaction details by hash.

@@ -98,6 +98,49 @@ defmodule P2PMonitor.Factory do
   end
 
   @doc """
+  Creates an EIP-7702 set code transaction for testing.
+  """
+  @spec build_eip7702_transaction(keyword()) :: map()
+  def build_eip7702_transaction(attrs \\ []) do
+    base = build_transaction(attrs)
+    
+    eip7702_fields = %{
+      type: :eip7702,
+      chain_id: Keyword.get(attrs, :chain_id, 1),
+      max_fee_per_gas: Keyword.get(attrs, :max_fee_per_gas, 30_000_000_000),
+      max_priority_fee_per_gas: Keyword.get(attrs, :max_priority_fee_per_gas, 2_000_000_000),
+      access_list: Keyword.get(attrs, :access_list, []),
+      authorization_list: Keyword.get(attrs, :authorization_list, [build_authorization()])
+    }
+    
+    # EIP-7702 uses signature_y_parity instead of v
+    base
+    |> Map.delete(:gas_price)
+    |> Map.delete(:v)
+    |> Map.put(:signature_y_parity, Keyword.get(attrs, :signature_y_parity, 0))
+    |> Map.put(:signature_r, base[:r])
+    |> Map.put(:signature_s, base[:s])
+    |> Map.delete(:r)
+    |> Map.delete(:s)
+    |> Map.merge(eip7702_fields)
+  end
+
+  @doc """
+  Creates an authorization tuple for EIP-7702 transactions.
+  """
+  @spec build_authorization(keyword()) :: map()
+  def build_authorization(attrs \\ []) do
+    %{
+      chain_id: Keyword.get(attrs, :chain_id, 1),
+      address: Keyword.get(attrs, :address, random_address()),
+      nonce: Keyword.get(attrs, :nonce, []),
+      y_parity: Keyword.get(attrs, :y_parity, 0),
+      r: Keyword.get(attrs, :r, Enum.random(1..1_000_000)),
+      s: Keyword.get(attrs, :s, Enum.random(1..1_000_000))
+    }
+  end
+
+  @doc """
   Creates a peer structure for testing.
   """
   @spec build_peer(keyword()) :: map()

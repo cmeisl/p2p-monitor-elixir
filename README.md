@@ -35,6 +35,7 @@ This tool is designed for network research, MEV analysis, security monitoring, a
   - EIP-2930 transactions with access lists (Type 1)
   - EIP-1559 transactions with dynamic fees (Type 2)
   - EIP-4844 blob transactions (Type 3)
+  - EIP-7702 set code transactions for Account Abstraction (Type 4)
   
 - **Cryptography**:
   - Keccak-256 hashing
@@ -361,20 +362,20 @@ chain_id = Network.chain_id(:mainnet)
 
 ## Test Coverage
 
-Current test coverage: **92.0%**
+Current test coverage: **90.7%**
 
 - Main module: 100%
 - Keccak module: 100%
 - Network config: 100%
-- RLP encoder: 97.0%
-- RLP decoder: 86.0%
+- RLP encoder: 96.7%
+- RLP decoder: 81.0%
 - Signature module: 82.9%
 
 **Test Statistics:**
-- 241 total tests (31 doctests + 21 properties + 189 unit tests)
+- 246 total tests (31 doctests + 21 properties + 194 unit tests)
 - Property-based tests with StreamData
 - Known test vectors for Ethereum compatibility
-- Full support for all transaction types (Legacy, EIP-2930, EIP-1559, EIP-4844)
+- Full support for all transaction types (Legacy, EIP-2930, EIP-1559, EIP-4844, EIP-7702)
 
 ## Contributing
 
@@ -415,6 +416,7 @@ See [SPECIFICATION.md](SPECIFICATION.md) for the complete implementation roadmap
 - [EIP-1559: Fee Market](https://eips.ethereum.org/EIPS/eip-1559)
 - [EIP-2930: Access List Transaction Type](https://eips.ethereum.org/EIPS/eip-2930)
 - [EIP-4844: Shard Blob Transactions](https://eips.ethereum.org/EIPS/eip-4844)
+- [EIP-7702: Set EOA Account Code](https://eips.ethereum.org/EIPS/eip-7702)
 - [EIP-55: Mixed-case Checksum Address Encoding](https://eips.ethereum.org/EIPS/eip-55)
 
 ## Acknowledgments

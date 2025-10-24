@@ -296,6 +296,87 @@ defmodule P2PMonitor.RLP.DecoderTest do
       eip4844_encoded = Encoder.encode_transaction(eip4844_tx)
       assert {:ok, decoded} = Decoder.decode_transaction(eip4844_encoded)
       assert decoded.type == :eip4844
+      
+      # EIP-7702 (0x04 prefix)
+      eip7702_tx = build_eip7702_transaction()
+      eip7702_encoded = Encoder.encode_transaction(eip7702_tx)
+      assert {:ok, decoded} = Decoder.decode_transaction(eip7702_encoded)
+      assert decoded.type == :eip7702
+    end
+
+    test "decodes EIP-7702 set code transaction" do
+      tx = %{
+        type: :eip7702,
+        chain_id: 1,
+        nonce: 0,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 21_000,
+        to: <<0x12, 0x34>>,
+        value: 0,
+        data: <<>>,
+        access_list: [],
+        authorization_list: [
+          %{
+            chain_id: 1,
+            address: <<0xAB, 0xCD>>,
+            nonce: [],
+            y_parity: 0,
+            r: 12345,
+            s: 67890
+          }
+        ]
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      assert {:ok, decoded} = Decoder.decode_transaction(encoded)
+      assert decoded.type == :eip7702
+      assert decoded.chain_id == 1
+      assert is_list(decoded.authorization_list)
+      assert length(decoded.authorization_list) == 1
+      
+      [auth] = decoded.authorization_list
+      assert auth.chain_id == 1
+      assert auth.address == <<0xAB, 0xCD>>
+      assert auth.nonce == []
+    end
+
+    test "decodes EIP-7702 transaction with signature" do
+      tx = %{
+        type: :eip7702,
+        chain_id: 1,
+        nonce: 5,
+        max_priority_fee_per_gas: 2_000_000_000,
+        max_fee_per_gas: 30_000_000_000,
+        gas_limit: 50_000,
+        to: <<0xAB, 0xCD>>,
+        value: 1_000_000_000_000_000_000,
+        data: <<0x12, 0x34>>,
+        access_list: [],
+        authorization_list: [
+          %{
+            chain_id: 1,
+            address: <<0xDE, 0xAD, 0xBE, 0xEF>>,
+            nonce: [5],
+            y_parity: 1,
+            r: 11111,
+            s: 22222
+          }
+        ],
+        signature_y_parity: 0,
+        signature_r: 12345,
+        signature_s: 67890
+      }
+      
+      encoded = Encoder.encode_transaction(tx)
+      
+      assert {:ok, decoded} = Decoder.decode_transaction(encoded)
+      assert decoded.type == :eip7702
+      assert decoded.signature_y_parity == 0
+      assert decoded.signature_r == 12345
+      assert decoded.signature_s == 67890
+      assert length(decoded.authorization_list) == 1
     end
 
     test "decodes transaction with empty to (contract creation)" do

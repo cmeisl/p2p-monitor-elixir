@@ -85,6 +85,10 @@ defmodule P2PMonitor.RLP.Encoder do
     encode_eip4844_transaction(tx)
   end
 
+  def encode_transaction(%{type: :eip7702} = tx) do
+    encode_eip7702_transaction(tx)
+  end
+
   def encode_transaction(tx) do
     # Default to legacy if no type specified
     encode_legacy_transaction(tx)
@@ -196,4 +200,43 @@ defmodule P2PMonitor.RLP.Encoder do
     # EIP-4844 transactions are prefixed with 0x03
     <<0x03>> <> encode(fields)
   end
+
+  defp encode_eip7702_transaction(tx) do
+    fields = [
+      tx[:chain_id] || 1,
+      tx[:nonce] || 0,
+      tx[:max_priority_fee_per_gas] || 0,
+      tx[:max_fee_per_gas] || 0,
+      tx[:gas_limit] || tx[:gas] || 21_000,
+      tx[:to] || "",
+      tx[:value] || 0,
+      tx[:data] || tx[:input] || "",
+      tx[:access_list] || [],
+      encode_authorization_list(tx[:authorization_list] || [])
+    ]
+
+    # Add signature fields if present
+    fields = if tx[:signature_y_parity] != nil do
+      fields ++ [tx[:signature_y_parity], tx[:signature_r] || 0, tx[:signature_s] || 0]
+    else
+      fields
+    end
+
+    # EIP-7702 transactions are prefixed with 0x04
+    <<0x04>> <> encode(fields)
+  end
+
+  defp encode_authorization_list(authorizations) when is_list(authorizations) do
+    Enum.map(authorizations, fn auth ->
+      [
+        auth[:chain_id] || 0,
+        auth[:address] || "",
+        auth[:nonce] || [],
+        auth[:y_parity] || 0,
+        auth[:r] || 0,
+        auth[:s] || 0
+      ]
+    end)
+  end
+  defp encode_authorization_list(_), do: []
 end
