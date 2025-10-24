@@ -49,15 +49,49 @@ defmodule P2PMonitor.Integration.EthereumDataTest do
   end
   
   describe "EIP-1559 transactions (Type 2)" do
-    @tag :skip
+    @tag timeout: 30_000
     test "decodes real EIP-1559 transaction from mainnet" do
-      # Example: Post-London fork transaction with dynamic fees
-      # These transactions have max_fee_per_gas and max_priority_fee_per_gas
+      alias P2PMonitor.Test.EthereumClient
       
-      # {:ok, decoded} = Decoder.decode_transaction(raw_tx)
-      # assert decoded.type == :eip1559
-      # assert decoded.max_fee_per_gas > 0
-      # assert decoded.max_priority_fee_per_gas > 0
+      # Real EIP-1559 transaction from mainnet
+      # https://etherscan.io/tx/0x04d6b9ff55c9e7d373332bc595b83ce4be7fbe76eb1cd6ef8c8d0056de2f2117
+      tx_hash = "0x04d6b9ff55c9e7d373332bc595b83ce4be7fbe76eb1cd6ef8c8d0056de2f2117"
+      
+      # Fetch raw transaction data
+      assert {:ok, raw_tx} = EthereumClient.get_raw_transaction(tx_hash, :mainnet)
+      assert is_binary(raw_tx)
+      assert byte_size(raw_tx) > 0
+      
+      # Decode the transaction
+      assert {:ok, decoded} = Decoder.decode_transaction(raw_tx)
+      
+      # Verify it's an EIP-1559 transaction
+      assert decoded.type == :eip1559
+      
+      # EIP-1559 specific fields
+      assert is_integer(decoded.max_fee_per_gas)
+      assert decoded.max_fee_per_gas > 0
+      assert is_integer(decoded.max_priority_fee_per_gas)
+      assert decoded.max_priority_fee_per_gas > 0
+      
+      # Common transaction fields
+      assert is_integer(decoded.nonce)
+      assert is_integer(decoded.gas_limit)
+      assert decoded.gas_limit > 0
+      assert is_binary(decoded.to)
+      assert is_integer(decoded.value)
+      assert is_binary(decoded.data)
+      assert is_list(decoded.access_list)
+      
+      # Should have signature
+      assert is_integer(decoded.v)
+      assert is_integer(decoded.r)
+      assert is_integer(decoded.s)
+      
+      # Test round-trip encoding
+      encoded = Encoder.encode_transaction(decoded)
+      assert {:ok, decoded_again} = Decoder.decode_transaction(encoded)
+      assert decoded == decoded_again
     end
   end
   
