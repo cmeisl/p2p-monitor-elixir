@@ -332,13 +332,14 @@ chain_id = Network.chain_id(:mainnet)
 
 ## Test Coverage
 
-Current test coverage: **86.3%**
+Current test coverage: **90.9%**
 
+- Main module: 100%
 - Keccak module: 100%
 - Network config: 100%
 - RLP encoder: 96.0%
 - RLP decoder: 85.7%
-- Signature module: 64.5%
+- Signature module: 81.2%
 
 **Test Statistics:**
 - 236 total tests (31 doctests + 21 properties + 184 unit tests)
