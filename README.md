@@ -62,8 +62,8 @@ This tool is designed for network research, MEV analysis, security monitoring, a
 
 ## Prerequisites
 
-- **Elixir**: 1.16 or higher
-- **Erlang/OTP**: 26 or higher
+- **Elixir**: 1.19 or higher
+- **Erlang/OTP**: 27 or higher
 - **Mix**: Elixir's build tool (comes with Elixir)
 
 ## Installation
